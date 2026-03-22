@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsc ./src/index.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/index.js",
     "loop": "tsc ./src/loop.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/loop.js",
+    "severity": "tsc ./src/severity.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/severity.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
