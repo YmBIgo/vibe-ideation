@@ -7,6 +7,7 @@
     "start": "tsc ./src/index.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/index.js",
     "loop": "tsc ./src/loop.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/loop.js",
     "loopKnownCompetitors": "tsc ./src/loopKnownCompetitors.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/loopKnownCompetitors.js",
+    "classifyIdea": "tsc ./src/classifyIdea.ts  --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/classifyIdea.js",
     "severity": "tsc ./src/severity.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/severity.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
