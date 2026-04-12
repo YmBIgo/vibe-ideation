@@ -85,6 +85,11 @@ async function improveIdeas(materialName: string, materialFeatures: string) {
       return { ...ideaObj, ...improvedIdea, over70, over80 };
     }));
     improvedIdeas.push(...results);
+    try {
+      fs.writeFile(`./json/${materialName}/improved_ideas_88.json`, JSON.stringify(improvedIdeas, null, 2), "utf-8");
+    } catch(error) {
+      console.error(error);
+    }
   }
   try {
     fs.writeFile(`./json/${materialName}/improved_ideas_88.json`, JSON.stringify(improvedIdeas, null, 2), "utf-8");

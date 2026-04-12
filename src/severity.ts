@@ -1,12 +1,43 @@
 import fs from "fs/promises";
 import OpenAI from "openai";
+import * as readline from "readline/promises";
+import { stdin as input, stdout as output } from "process";
 import { SEVERITY_PROMPT } from "./prompts.js";
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
 });
 
-async function main(material: string, score: number) {
+async function main() {
+  console.log("\n\n応用したい素材の名前を入力してください\n\n");
+  // get user input
+  const rl1 = readline.createInterface({ input, output });
+  let material: string = "";
+  try {
+    material = await rl1.question("素材の名前: ");
+  } catch (error) {
+    console.error("入力エラー:", error);
+  } finally {
+    rl1.close();
+  }
+  console.log("\n\n応用したい素材の特徴を入力してください\n\n");
+  // get user input
+  const rl3 = readline.createInterface({ input, output });
+  let scoreString: string = "";
+  try {
+    scoreString = await rl3.question("素材の特徴: ");
+  } catch (error) {
+    console.error("入力エラー:", error);
+  } finally {
+    rl3.close();
+  }
+  const score = parseInt(scoreString);
+  if (isNaN(score) || score < 0 || score > 100) {
+    console.error("無効なスコアが入力されました。0から100の整数を入力してください。");
+    return;
+  }
+  console.log(`素材: ${material}`);
+  console.log(`特徴のスコア: ${score}`);
   let foldersAndFiles: string[] = [];
   try {
     foldersAndFiles = await fs.readdir(`./json/${material}/idea/`);
@@ -101,5 +132,6 @@ async function sortBySeverity(material: string, score: number) {
   }
 }
 
-main("粉末積層箔", 90);
+main();
+// 例：粉末積層箔, 88
 // sortBySeverity("粉末積層箔", 89);
