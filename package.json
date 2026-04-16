@@ -10,6 +10,7 @@
     "severity": "tsc ./src/severity.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/severity.js",
     "classifyIdea": "tsc ./src/classifyIdea.ts  --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/classifyIdea.js",
     "improveIdea": "tsc ./src/improveIdea.ts  --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/improveIdea.js",
+    "categorizedLoop": "tsc ./src/categorizedLoop.ts --target ES2020 --module NodeNext --moduleResolution NodeNext --outDir ./dist && node ./dist/categorizedLoop.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
