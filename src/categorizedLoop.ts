@@ -3,7 +3,7 @@ import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 import OpenAI from "openai";
 
-import { PROMPT1, PROMPT2, PROMPT3, PROMPT3_3 } from "./prompts.js";
+import { PROMPT1, PROMPT2, PROMPT3, PROMPT3_3, REMOVE_DUPLICATE_CATEGORY_PROMPT } from "./prompts.js";
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
@@ -128,42 +128,15 @@ async function step3(
 
   let placeUsed: Record<string, number> = {};
 
-  // TODO : ここを以下のフローに変える
-  // 1. まずは1カテゴリでplaceUsedを抽出する
-  // 2. そこから10個ずつ並列でLLMに問い合わせる
-  // 3. 10個の問い合わせが終わるごとにplaceUsedの重複を削除して更新する
-
-  for(const category of categories) {
-    const ideaPath2 = `./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${category}.json`;
-    try {
-      await fs.access(ideaPath2);
-      console.log("LLMアイデアはすでに抽出されています。");
-      // const data = await fs.readFile(ideaPath2, "utf-8");
-      try {
-        if (Object.keys(placeUsed).length === 0) {
-          const filePaths = await fs.readdir(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}`);
-          for (const filePath of filePaths) {
-            const dataString = await fs.readFile(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${filePath}`, "utf-8");
-            const data = JSON.parse(dataString);
-            if (data && data.placeUsed) {
-              data.placeUsed.forEach((place: string) => {
-                if (placeUsed[place]) {
-                  placeUsed[place] += 1;
-                } else {
-                  placeUsed[place] = 1;
-                }
-              });
-            }
-          }
-        }
-        await fs.writeFile(ideaPath, JSON.stringify(placeUsed, null, 2), "utf-8");
-      } catch (error) {
-        console.error("使用箇所の抽出中にエラーが発生しました:", error);
-      }
-      continue;
-    } catch (error) {
-      console.log("LLMアイデアを抽出します。", category);
-    }
+  async function generateIdea(
+    product: string,
+    process: string,
+    features: string[],
+    requirements: string[],
+    material: string,
+    category: string,
+    ideaPath2: string
+  ) {
     const inputText = `\`\`\`入力
 製品: ${product}
 動作: ${process}
@@ -193,10 +166,90 @@ async function step3(
       });
     } catch (error) {
       console.error("LLMの応答の処理中にエラーが発生しました:", error);
-      continue;
+      return;
     }
+  }
+
+  const firstCategory = categories[0];
+  const remainCategories = categories.slice(1);
+  const firstIdeaPath = `./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${firstCategory}.json`;
+
+  if (firstCategory) {
+    await generateIdea(product, process, features, requirements, material, firstCategory, firstIdeaPath);
+  }
+
+  const slicedRemainCategories = [];
+  for (let i = 0; i < remainCategories.length; i += 10) {
+    slicedRemainCategories.push(remainCategories.slice(i, i + 10));
+  }
+
+  for(const category of slicedRemainCategories) {
+    await Promise.all(category.map(async (cat) => {
+      const ideaPath2 = `./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${cat}.json`;
+      try {
+        await fs.access(ideaPath2);
+        console.log("LLMアイデアはすでに抽出されています。");
+        // const data = await fs.readFile(ideaPath2, "utf-8");
+        try {
+          if (Object.keys(placeUsed).length === 0) {
+            const filePaths = await fs.readdir(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}`);
+            for (const filePath of filePaths) {
+              const dataString = await fs.readFile(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${filePath}`, "utf-8");
+              const data = JSON.parse(dataString);
+              if (data && data.placeUsed) {
+                data.placeUsed.forEach((place: string) => {
+                  if (placeUsed[place]) {
+                    placeUsed[place] += 1;
+                  } else {
+                    placeUsed[place] = 1;
+                  }
+                });
+              }
+            }
+          }
+          await fs.writeFile(ideaPath, JSON.stringify(placeUsed, null, 2), "utf-8");
+        } catch (error) {
+          console.error("使用箇所の抽出中にエラーが発生しました:", error);
+        }
+        return;
+      } catch (error) {
+        console.log("LLMアイデアを抽出します。", cat);
+      }
+      await generateIdea(product, process, features, requirements, material, cat, ideaPath2);
+    }));
+//     try {
+//       const inputText = `\`\`\`入力
+// 今までに出てきた素材を使う場所： ${placeUsed ? Object.keys(placeUsed).join(", ") : "なし"}
+// \`\`\``;
+//       console.log("LLMにStep_remove_duplicateを問い合わせ中...");
+//       const response = await client.responses.create({
+//         model: "gpt-5.4",
+//         instructions: REMOVE_DUPLICATE_CATEGORY_PROMPT,
+//         input: inputText,
+//       });
+//       const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
+//       const ideaJson = JSON.parse(outputText);
+//       placeUsed = ideaJson; // できれば結合したい...
+//     } catch (error) {
+//       console.error("LLMの応答の処理中にエラーが発生しました:", error);
+//       continue;
+//     }
   };
   try {
+    const filePaths = await fs.readdir(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}`);
+    for (const filePath of filePaths) {
+      const dataString = await fs.readFile(`./json/${material2}/categorizedIdea/${product}/${process}/${competitor}/${filePath}`, "utf-8");
+      const data = JSON.parse(dataString);
+      if (data && data.placeUsed) {
+        data.placeUsed.forEach((place: string) => {
+          if (placeUsed[place]) {
+            placeUsed[place] += 1;
+          } else {
+            placeUsed[place] = 1;
+          }
+        });
+      }
+    }
     await fs.writeFile(ideaPath, JSON.stringify(placeUsed, null, 2), "utf-8");
   } catch (error) {
     console.error("使用箇所の抽出中にエラーが発生しました:", error);
@@ -289,7 +342,7 @@ async function main() {
     return a;
   }, [])
   .slice(1, 2); // debugのため、最初の10製品のみに制限
-  for (const splittedProduct of [["ロボット掃除機"]]) {
+  for (const splittedProduct of [["アイロン台（電動付き）"]]) {
     // debugのため、最初の2製品のみに制限
     splittedProduct.slice(0, 1).forEach(async(product: string) => {
       await mainStep(product, material2, material);
