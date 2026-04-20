@@ -342,7 +342,7 @@ async function main() {
     return a;
   }, [])
   .slice(1, 2); // debugのため、最初の10製品のみに制限
-  for (const splittedProduct of [["アイロン台（電動付き）"]]) {
+  for (const splittedProduct of [["スマートスピーカー"]]) {
     // debugのため、最初の2製品のみに制限
     splittedProduct.slice(0, 1).forEach(async(product: string) => {
       await mainStep(product, material2, material);

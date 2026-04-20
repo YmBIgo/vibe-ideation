@@ -77,7 +77,7 @@ async function main() {
       if (!json || !Array.isArray(json) || json.length === 0) {
         continue;
       }
-      ideas = [...ideas, ...json.filter((idea: any) => idea.score === score)];
+      ideas = [...ideas, ...json.filter((idea: any) => idea.score >= score)];
     } catch (error) {
       console.error(`Error processing file ${file}:`, error);
       continue;
