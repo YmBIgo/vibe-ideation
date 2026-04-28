@@ -29,6 +29,7 @@ import { stdin as input, stdout as output } from "process";
 import OpenAI from "openai";
 
 import { PROMPT1, PROMPT2, PROMPT2_2, PROMPT3 } from "./prompts.js";
+import { OPENAI_MODEL } from "./const.js";
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
@@ -50,7 +51,7 @@ async function step1(product: string, material2: string) {
     try {
       console.log("LLMにStep1を問い合わせ中...");
       const response = await client.responses.create({
-        model: "gpt-5.4",
+        model: OPENAI_MODEL,
         instructions: PROMPT1,
         input: inputText,
       });
@@ -85,7 +86,7 @@ async function step2_2(product: string, process: string, features: string[], mat
     try {
       console.log("LLMにStep2を問い合わせ中...");
       const response = await client.responses.create({
-        model: "gpt-5.4",
+        model: OPENAI_MODEL,
         instructions: PROMPT2_2,
         input: inputText,
         tools: [
@@ -121,7 +122,7 @@ async function step2(product: string, process: string, features: string[], mater
     try {
       console.log("LLMにStep2を問い合わせ中...");
       const response = await client.responses.create({
-        model: "gpt-5.4",
+        model: OPENAI_MODEL,
         instructions: PROMPT2,
         input: inputText,
       });
@@ -161,7 +162,7 @@ async function step3(product: string, process: string, features: string[], requi
   try {
     console.log("LLMにStep3を問い合わせ中...");
     const response = await client.responses.create({
-      model: "gpt-5.4",
+      model: OPENAI_MODEL,
       instructions: PROMPT3,
       input: inputText,
     });

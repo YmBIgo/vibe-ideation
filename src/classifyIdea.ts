@@ -3,6 +3,7 @@ import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 import fs from "fs/promises";
 import {CLASSIFY_IDEA_PROMPT} from "./prompts.js";
+import { OPENAI_MODEL } from "./const.js";
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
@@ -11,7 +12,7 @@ const client = new OpenAI({
 async function categorizeIdea(idea: string, categories: string[], materialFeatures: string): Promise<string[]> {
   try {
     const response = await client.responses.create({
-      model: "gpt-5.4",
+      model: OPENAI_MODEL,
       instructions: CLASSIFY_IDEA_PROMPT,
       input: JSON.stringify({
         idea,

@@ -4,6 +4,7 @@ import { stdin as input, stdout as output } from "process";
 import OpenAI from "openai";
 
 import { PROMPT1, PROMPT2, PROMPT3, PROMPT3_3, REMOVE_DUPLICATE_CATEGORY_PROMPT } from "./prompts.js";
+import { OPENAI_MODEL } from "./const.js";
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
@@ -37,7 +38,7 @@ async function step1(product: string, material2: string) {
     try {
       console.log("LLMにStep1を問い合わせ中...");
       const response = await client.responses.create({
-        model: "gpt-5.4",
+        model: OPENAI_MODEL,
         instructions: PROMPT1,
         input: inputText,
       });
@@ -149,7 +150,7 @@ async function step3(
     try {
       console.log("LLMにStep3を問い合わせ中...");
       const response = await client.responses.create({
-        model: "gpt-5.4",
+        model: OPENAI_MODEL,
         instructions: PROMPT3_3,
         input: inputText,
       });
