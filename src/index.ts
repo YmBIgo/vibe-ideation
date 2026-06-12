@@ -26,17 +26,13 @@
 import * as fs from "fs/promises";
 import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "process";
-import OpenAI from "openai";
 
 import { PROMPT1, PROMPT2, PROMPT3 } from "./prompts.js";
+import { getLLMResponse } from "./llm/index.js";
 
-const client = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
-});
-
-async function step1(product: string, material2: string) {
+async function step1(product: string, material2: string, now: string) {
   // check if product json is already exists
-  const productPath = `./json/${material2}/products/${product}.json`;
+  const productPath = `./json/${material2}/${now}/products/${product}.json`;
   try {
     await fs.access(productPath);
     console.log("製品の動作の流れはすでに抽出されています。");
@@ -49,13 +45,8 @@ async function step1(product: string, material2: string) {
 \`\`\``;
     try {
       console.log("LLMにStep1を問い合わせ中...");
-      const response = await client.responses.create({
-        model: "gpt-5.2",
-        instructions: PROMPT1,
-        input: inputText,
-      });
-      const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
-      await fs.mkdir(`./json/${material2}/products`, { recursive: true });
+      const outputText = await getLLMResponse("anthropic", inputText, PROMPT1);
+      await fs.mkdir(`./json/${material2}/${now}/products`, { recursive: true });
       await fs.writeFile(productPath, outputText, "utf-8");
       return JSON.parse(outputText);
     } catch (error) {
@@ -65,9 +56,9 @@ async function step1(product: string, material2: string) {
   }
 }
 
-async function step2(product: string, process: string, features: string[], material2: string) {
+async function step2(product: string, process: string, features: string[], material2: string, now: string) {
   // check if competitor json is already exists
-  const competitorPath = `./json/${material2}/competitor/${product}/${process}.json`;
+  const competitorPath = `./json/${material2}/${now}/competitor/${product}/${process}.json`;
   try {
     await fs.access(competitorPath);
     console.log("製品の動作の流れはすでに抽出されています。");
@@ -82,13 +73,8 @@ async function step2(product: string, process: string, features: string[], mater
 \`\`\``;
     try {
       console.log("LLMにStep2を問い合わせ中...");
-      const response = await client.responses.create({
-        model: "gpt-5.2",
-        instructions: PROMPT2,
-        input: inputText,
-      });
-      const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
-      await fs.mkdir(`./json/${material2}/competitor/${product}`, { recursive: true });
+      const outputText = await getLLMResponse("anthropic", inputText, PROMPT2);
+      await fs.mkdir(`./json/${material2}/${now}/competitor/${product}`, { recursive: true });
       await fs.writeFile(competitorPath, outputText, "utf-8");
       return JSON.parse(outputText);
     } catch (error) {
@@ -98,10 +84,10 @@ async function step2(product: string, process: string, features: string[], mater
   }
 }
 
-async function step3(product: string, process: string, features: string[], requirements: string[], material: string, competitor: string, material2: string) {
+async function step3(product: string, process: string, features: string[], requirements: string[], material: string, competitor: string, material2: string, now: string) {
   // ここで、製品の動作の流れ、特徴、素材の要件をもとに、LLMにアイデアを提案してもらう
-  await fs.mkdir(`./json/${material2}/idea/${product}/${process}`, { recursive: true });
-  const ideaPath = `./json/${material2}/idea/${product}/${process}/${competitor}.json`;
+  await fs.mkdir(`./json/${material2}/${now}/idea/${product}/${process}`, { recursive: true });
+  const ideaPath = `./json/${material2}/${now}/idea/${product}/${process}/${competitor}.json`;
   try {
     await fs.access(ideaPath);
     console.log("LLMアイデアはすでに抽出されています。");
@@ -119,12 +105,7 @@ async function step3(product: string, process: string, features: string[], requi
 \`\`\``;
   try {
     console.log("LLMにStep3を問い合わせ中...");
-    const response = await client.responses.create({
-      model: "gpt-5.2",
-      instructions: PROMPT3,
-      input: inputText,
-    });
-    const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
+    const outputText = await getLLMResponse("anthropic", inputText, PROMPT3);
     console.log("提案されたアイデア:", outputText);
     await fs.writeFile(ideaPath, outputText, "utf-8");
     return JSON.parse(outputText);
@@ -175,23 +156,25 @@ async function mainStep() {
     return;
   }
 
-  const flow = await step1(product, material2);
+  const now = Date.now().toString(); // 現在のタイムスタンプを文字列として取得
+
+  const flow = await step1(product, material2, now);
   if (!flow.flow || !Array.isArray(flow.flow) || flow.flow.length === 0) {
     console.error("動作の流れの抽出に失敗しました。");
     return;
   }
 
-  for (const process of flow.flow) {
+  flow.flow.forEach(async(process: any) => {
     const { process: processName, features } = process;
     console.log(`動作の過程: ${processName}`);
     if (!processName || !features || !Array.isArray(features)) {
       console.error("動作の過程や特徴の抽出に失敗しました。");
-      continue;
+      return;
     }
-    const competitors = await step2(product, processName.replace(/\//g, ""), features, material2);
+    const competitors = await step2(product, processName.replace(/\//g, ""), features, material2, now);
     if (!Array.isArray(competitors) || competitors.length === 0) {
       console.error("素材の要件と特徴の抽出に失敗しました。");
-      continue;
+      return;
     }
     for (const competitor of competitors) {
       const { requirements, material: competitor1 } = competitor;
@@ -200,9 +183,9 @@ async function mainStep() {
         console.error("素材の要件の抽出に失敗しました。");
         continue;
       }
-      await step3(product, processName.replace(/\//g, ""), features, requirements, material, competitor1.replace(/\//g, ""), material2);
+      await step3(product, processName.replace(/\//g, ""), features, requirements, material, competitor1.replace(/\//g, ""), material2, now);
     }
-  }
+  });
 }
 
 mainStep();

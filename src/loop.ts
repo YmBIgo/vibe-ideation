@@ -26,14 +26,9 @@
 import * as fs from "fs/promises";
 import * as readline from "readline/promises";
 import { stdin as input, stdout as output } from "process";
-import OpenAI from "openai";
 
 import { PROMPT1, PROMPT2, PROMPT3 } from "./prompts.js";
-import { OPENAI_MODEL } from "./const.js";
-
-const client = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
-});
+import { getLLMResponse } from "./llm/index.js";
 
 async function step1(product: string, material2: string) {
   // check if product json is already exists
@@ -50,12 +45,7 @@ async function step1(product: string, material2: string) {
 \`\`\``;
     try {
       console.log("LLMにStep1を問い合わせ中...");
-      const response = await client.responses.create({
-        model: OPENAI_MODEL,
-        instructions: PROMPT1,
-        input: inputText,
-      });
-      const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
+      const outputText = await getLLMResponse("openai", inputText, PROMPT1);
       await fs.mkdir(`./json/${material2}/products`, { recursive: true });
       await fs.writeFile(productPath, outputText, "utf-8");
       return JSON.parse(outputText);
@@ -83,12 +73,7 @@ async function step2(product: string, process: string, features: string[], mater
 \`\`\``;
     try {
       console.log("LLMにStep2を問い合わせ中...");
-      const response = await client.responses.create({
-        model: OPENAI_MODEL,
-        instructions: PROMPT2,
-        input: inputText,
-      });
-      const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
+      const outputText = await getLLMResponse("openai", inputText, PROMPT2);
       await fs.mkdir(`./json/${material2}/competitor/${product}`, { recursive: true });
       await fs.writeFile(competitorPath, outputText, "utf-8");
       return JSON.parse(outputText);
@@ -120,12 +105,7 @@ async function step3(product: string, process: string, features: string[], requi
 \`\`\``;
   try {
     console.log("LLMにStep3を問い合わせ中...");
-    const response = await client.responses.create({
-      model: OPENAI_MODEL,
-      instructions: PROMPT3,
-      input: inputText,
-    });
-    const outputText = response.output_text.replace(/```json/, "").replace(/```/, "");
+    const outputText = await getLLMResponse("openai", inputText, PROMPT3);
     console.log("提案されたアイデア:", outputText);
     await fs.writeFile(ideaPath, outputText, "utf-8");
     return JSON.parse(outputText);
