@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 export type LLMType = 'openai' | 'anthropic'
 export const openAIModel = "gpt-5.5";
-export const anthropicModel = "claude-fable-5";
+export const anthropicModel = "claude-opus-4-8";
 
 export const getLLMResponse = async (
   llmType: LLMType,

@@ -21,12 +21,25 @@ apt get node
 brew install node
 ```
 
-2. [下準備] OpenAIのAPI Key取得
+2. [下準備] OpenAIのAPI Key取得 か AnthropicのAPI Keyの取得
 
+- OpenAIの場合
 https://qiita.com/kurata04/items/a10bdc44cc0d1e62dad3
 
 などを参考にしてAPI Keyを取得して、
 環境変数 "OPENAI_API_KEY" にそのAPI Keyを設定
+OpenAIのデフォルトのモデルは、gpt-5.5です。
+
+- Anthropicの場合
+https://qiita.com/wozisagi/items/4ba506f25ee98584643a
+
+などを参考にしてAPI Keyを取得して、
+環境変数 "ANTHROPIC_API_KEY" にそのAPI Keyを設定
+Anthropicのデフォルトのモデルは、claude-opus-4-8です。
+
+- OpenAI, Anthropicのモデル変更方法
+
+src/index.ts の getLLMResponseの引数を openai, anthropicで書き換えることで、モデルの変更できます。
 
 3. nodeアプリの環境設定
 
